@@ -1,0 +1,13 @@
+---
+- name: Playbook to create a trust
+  hosts: ipaserver
+  become: true
+
+  tasks:
+    - name: Ensure the trust is present
+      ipatrust:
+        ipaadmin_password: SomeADMINpassword
+        realm: windows.local
+        admin: Administrator
+        password: secret_password
+        state: present

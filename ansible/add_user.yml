@@ -1,0 +1,17 @@
+- name: Create user user1
+  hosts: server.otus.test
+  become: true
+  tasks:
+  - name: Add user
+    ipauser:
+      ipaadmin_password: Otus2022!
+      name: user1
+      first: Ivan
+      last: Ivanov
+      uid: 100001
+      gid: 1000
+      phone: "+7 999 999 99 99"
+      email: i.ivanov@otus.test
+      password: "Otus2022!"
+      update_password: on_create
+

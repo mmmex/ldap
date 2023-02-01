@@ -1,0 +1,167 @@
+---
+- name: On all hosts need upgrade yum
+  hosts: all
+  become: true
+  tasks:
+  - name: Set timezone to Europe/Moscow
+    ansible.builtin.timezone:
+      name: Europe/Moscow
+  - name: Upgrade yum
+    yum:
+      name: '*'
+      state: latest
+
+- name: Prepare server FreeIPA
+  hosts: server.otus.test
+  become: true
+  pre_tasks:
+  - name: SELinux set to permissive
+    ansible.builtin.selinux:
+      policy: targeted
+      state: permissive
+  roles:
+  - role: ipaserver
+    state: present
+  vars:
+    ipadm_password: Otus2022!
+    ipaadmin_password: Otus2022!
+    ipaserver_ip_addresses:
+      - 192.168.56.10
+      - 192.168.57.10
+      # - 192.168.58.10
+    ipaserver_domain: otus.test
+    ipaserver_realm: OTUS.TEST
+    ipaserver_hostname: server.otus.test
+    ipaserver_install_packages: true
+    ipaserver_setup_dns: true
+    ipaserver_setup_firewalld: true
+    ipaserver_firewalld_zone: public
+    ipaserver_no_forwarders: true
+  post_tasks:
+  - name: Generate ssh key for root
+    user:
+      name: root
+      generate_ssh_key: yes
+      ssh_key_type: ed25519
+      ssh_key_file: .ssh/id_ed25519
+      state: present
+    register: ssh_key
+  - name: Create user
+    ipauser:
+      ipaadmin_password: Otus2022!
+      name: i.ivanov
+      first: Ivan
+      last: Ivanov
+      uid: 100001
+      gid: 1000
+      sshpubkey:
+        - "{{ ssh_key.ssh_public_key }}"
+      phone: "+7 999 999 99 99"
+      email: i.ivanov@otus.test
+      password: "Otus2022!"
+      update_password: on_create
+  - name: Ensure zone is present.
+    ipadnszone:
+      ipaadmin_password: Otus2022!
+      name: org.test
+      state: present
+
+- name: Configure IPA client
+  hosts: client1.otus.test
+  become: true
+  pre_tasks:
+  - name: Enabled firewalld
+    ansible.builtin.systemd:
+      name: firewalld
+      enabled: yes
+      state: started
+  - name: Add firewalld rules
+    ansible.builtin.command:
+      firewall-cmd
+        --permanent
+        --zone=public
+        --add-service=freeipa-ldap
+        --add-service=freeipa-ldaps
+        --add-service=dns
+        --add-service=ntp
+        --add-service=nfs
+    notify: restart firewalld
+  roles:
+  - role: ipaclient
+    state: present
+  vars:
+    ipaclient_domain: otus.test
+    ipaclient_realm: OTUS.TEST
+    ipaclient_mkhomedir: true
+    ipaclient_force_join: true
+    ipasssd_enable_dns_updates: true
+    ipaadmin_principal: admin
+    ipaadmin_password: Otus2022!
+    ipaservers: server.otus.test
+    ipaclient_configure_dns_resolver: yes
+    ipaclient_dns_servers: 192.168.57.10
+    ipaclient_cleanup_dns_resolver: true
+  handlers:
+  - name: restart firewalld
+    ansible.builtin.systemd:
+      name: firewalld
+      state: restarted
+
+# - name: Playbook to configure IPA clients with username/password
+#   hosts: client2.org.test
+#   become: true
+#   roles:
+#   - role: ipaclient
+#     state: present
+#   vars:
+#     # ipaclient_allow_repair: yes
+#     # ip_addresses: 192.168.57.10
+#     ipaclient_domain: otus.test
+#     ipaclient_realm: OTUS.TEST
+#     ipaclient_mkhomedir: yes
+#     ipaclient_force_join: true
+#     ipasssd_enable_dns_updates: true
+#     # ipaclient_extraargs: [ '--kinit-attempts=3', '--mkhomedir']
+#     ipaadmin_principal: admin
+#     ipaadmin_password: Otus2022!
+#     # ipaclient_mkhomedir: yes
+#     ipaservers: server.otus.test
+#     ipaclient_configure_dns_resolver: yes
+#     ipaclient_dns_servers: 192.168.58.10
+#     ipaclient_cleanup_dns_resolver: true
+
+  # pre_tasks:
+      
+  #   - name: upgrade all packages
+  #     yum: name=* state=latest
+        
+    # - name: change dns
+    #   lineinfile: 
+    #     dest: /etc/resolv.conf
+    #     regexp: "{{ item.regexp }}" 
+    #     line: "{{ item.line }}"
+    #     backrefs: yes
+    #   with_items:
+    #     - { regexp: '^nameserver', line: 'nameserver 192.168.56.10' }
+
+    # - name: change dns
+    #   copy: 
+    #     src: no-dns.conf
+    #     dest: /etc/NetworkManager/conf.d/no-dns.conf
+    #     owner: root
+    #     group: root
+    #     mode: '0644'
+    #   notify:
+    #   - restart NetworkManager
+  #   - name: change hosts
+  #     copy: 
+  #       src: hosts
+  #       dest: /etc/hosts
+  #       owner: root
+  #       group: root
+  #       mode: '0644'
+  # handlers:
+  # - name: restart NetworkManager
+  #   service:
+  #     name: NetworkManager
+  #     state: restarted

@@ -1,0 +1,6 @@
+.vscode/
+.vagrant/
+*.log
+*.vdi
+*.json
+TODO.md

@@ -1,0 +1,10 @@
+---
+- name: Playbook to disable global DNS forwarders
+  hosts: ipaserver
+  become: true
+
+  tasks:
+  - name: Disable global forwarders.
+    ipadnsconfig:
+      ipaadmin_password: SomeADMINpassword
+      forward_policy: none
