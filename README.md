@@ -10,7 +10,7 @@
 
 ### Запуск проекта
 
-1. Клонируем репозиторий: `git clone ...`
+1. Клонируем репозиторий: `https://github.com/mmmex/ldap.git`
 2. Переходим в каталог: `cd ldap`
 3. Запускаем проект: `vagrant up`
 
@@ -28,13 +28,19 @@ client1.otus.test | 192.168.57.11 (intnet:clients1-net) | FreeIPA client
 admin | Otus2022! | Администратор
 i.ivanov | Otus2022! | Пользователь без sudo
 
-* Чтобы выполнить вход в административный интерфейс FreeIPA, на хостовой машине (в моем случае Linux Mint) необходимо добавить в файл `/etc/hosts` ip-адрес и имя сервера FreeIPA:
+* Чтобы выполнить вход в административный UI интерфейс FreeIPA, на хостовой машине (в моем случае Linux Mint) необходимо добавить в файл `/etc/hosts` ip-адрес и имя сервера FreeIPA:
 
 ```bash
 echo "192.168.56.10 server.otus.test" >> /etc/hosts
 ```
 
-* Для удаления записи выполнить:
+![image](https://raw.githubusercontent.com/mmmex/ldap/master/screenshots/screenshot1.png)
+
+![image](https://raw.githubusercontent.com/mmmex/ldap/master/screenshots/screenshot2.png)
+
+![image](https://raw.githubusercontent.com/mmmex/ldap/master/screenshots/screenshot3.png)
+
+* Для удаления записи из хостовой машины выполнить:
 
 ```bash
 sed -i 's/^192.168.56.10 server.otus.test$//' /etc/hosts
